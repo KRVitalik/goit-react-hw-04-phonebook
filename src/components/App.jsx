@@ -15,14 +15,16 @@ const App = () => {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
 
-
   useEffect(() => {
     const contacts = localStorage.getItem('contacts');
     const parsedContacts = JSON.parse(contacts) ?? [];
+
     setContacts(parsedContacts)
   }, [])
-  
+
   useEffect(() => {
+if(contacts.length === 0) return
+
     localStorage.setItem('contacts', JSON.stringify(contacts))
   }, [contacts])
 
@@ -58,7 +60,6 @@ const App = () => {
     }
 
     setContacts(contacts => ([...contacts, contact]))
-
     toast.success(`You add contact ${name} to your phonebook.`, {
       position: toast.POSITION.TOP_CENTER
     });
