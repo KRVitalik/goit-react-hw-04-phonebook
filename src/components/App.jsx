@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import { nanoid } from 'nanoid'
 import ContactList from "./ContactList/ContactList";
 import Filter from "./Filter/Filter";
@@ -8,82 +8,73 @@ import { Container } from "./App.styled";
   import { ToastContainer, toast } from 'react-toastify';
   import 'react-toastify/dist/ReactToastify.css';
 
-class App extends Component {
-  state = {
-    contacts: [],
-    filter: ''
-  }
+const App = () => {
 
-  componentDidMount() {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
+  const [name, setName] = useState('');
+  const [number, setNumber] = useState('');
+
+
+  useEffect(() => {
     const contacts = localStorage.getItem('contacts');
-    const parsedContacts = JSON.parse(contacts)
-    if (parsedContacts) {
-      this.setState({contacts: parsedContacts})
-    }
-}
+    const parsedContacts = JSON.parse(contacts) ?? [];
+    setContacts(parsedContacts)
+  }, [])
+  
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts))
+  }, [contacts])
 
-  componentDidUpdate(_, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts))
-    }
-
-  }
-
-  handleInputChange = e => {
-    this.setState({
-      [e.target.name]: e.target.value,
-    })
-    this.checkName(e)
-  }
-
-  checkName = (e) => {
-    const { contacts } = this.state;
+  const checkName = (e) => {
     return contacts.some(contact =>
       contact.name.toLowerCase() === e.target.value)
   }
-
-
-  handleSubmit = e => {
-    e.preventDefault()
-    let {contacts, name} = this.state
-  if (contacts.some((contact) => contact.name.toLowerCase() === name.toLowerCase())) {
     
-    toast.error(`${this.state.name} is already in contact !`, {
+  const handleInputChange = e => {
+    e.target.name === "name"
+      ? setName(e.target.value)
+      : e.target.name === "number"
+        ? setNumber(e.target.value)
+        : setFilter(e.target.value)
+
+    checkName(e)
+  }
+
+  const handleSubmit = e => {
+    e.preventDefault()
+    if (contacts.some((contact) => contact.name.toLowerCase() === name.toLowerCase())) {
+    
+      toast.error(`${name} is already in contact !`, {
         position: toast.POSITION.TOP_CENTER
       });
-;
-    return;
-  }
+      ;
+      return;
+    }
     let contact = {
       id: nanoid(),
-      name: this.state.name,
-      number: this.state.number,
+      name,
+      number,
     }
 
-    this.setState((prevState) => ({
-      contacts: [...prevState.contacts, contact],
-    }))
+    setContacts(contacts => ([...contacts, contact]))
 
-    toast.success(`You add contact ${this.state.name} to your phonebook.`, {
-        position: toast.POSITION.TOP_CENTER
+    toast.success(`You add contact ${name} to your phonebook.`, {
+      position: toast.POSITION.TOP_CENTER
     });
     
     e.target.reset()
   }
 
-  contactDelete = (id) => {
-    this.setState((prevState) => { 
-      return {
-        contacts: prevState.contacts.filter(contact => contact.id !== id)
-      }
-    })
-          toast.warn(`You deleted contact ${this.state.name} from your phonebook.`, {
+  const contactDelete = (id) => {
+    setContacts(contacts.filter(contact => contact.id !== id))
+
+          toast.warn(`You deleted contact ${name} from your phonebook.`, {
         position: toast.POSITION.TOP_CENTER
       });
-  }
+}
   
-  filteredContacts = () => {
-      const { contacts, filter } = this.state;
+  const filteredContacts = () => {
     return contacts
       .sort((firstContact, secondContact) =>
         firstContact.name.localeCompare(secondContact.name))
@@ -92,18 +83,19 @@ class App extends Component {
   );
   }
 
-  render() { 
+
     return (
   <Container>
     <h1>Phonebook</h1>
-    <ContactForm handleSubmit={ this.handleSubmit} handleInputChange={this.handleInputChange } />
+    <ContactForm handleSubmit={handleSubmit} handleInputChange={handleInputChange } />
     <h2>Contacts</h2>
-    <Filter handleInputChange={this.handleInputChange } />
-        <ContactList contacts={this.filteredContacts()} contactDelete={this.contactDelete} />
+    <Filter handleInputChange={handleInputChange } />
+        <ContactList
+          contacts={filteredContacts()}
+          contactDelete={contactDelete} />
         <ToastContainer />
 </Container>
     );
-  }
 }
  
 export default App;
